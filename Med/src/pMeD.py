@@ -1,14 +1,7 @@
 #!/usr/bin/python
 # --*-- coding: utf-8 --*--
-
-import gettext
-import gobject
 import gtk
-import gtk.glade
-import os
-import pygtk
 import sys
-import threading
 import time
 
 
