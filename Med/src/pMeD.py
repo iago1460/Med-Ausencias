@@ -5,8 +5,6 @@ import sys
 import time
 
 
-requests = []
-employees = []
 
 # Ventana principal
 class WindowMain:
@@ -217,7 +215,6 @@ def print_list(requests):
 	for request in requests:
 		print str(request)
 
-
 def load_employees():
 	try:
 		filename = 'employees.txt'
@@ -237,7 +234,16 @@ def getEmployee(name, passw):
 
 #***********************************************************************
 
-load_employees()
-print_list(employees)
-wmain = WindowLogin()
-gtk.main()
+
+requests = []
+employees = []
+
+def main():
+
+	load_employees()
+	print_list(employees)
+	wmain = WindowLogin()
+	gtk.main()
+
+
+if  __name__ =='__main__':main()
