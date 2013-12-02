@@ -27,15 +27,15 @@ class WindowMain:
 
 	# metodo que añade la tarea a la lista
 	def addrequest(self, typeRequest, dateRequest, dateIni, dateEnd, state):
-		print (self.employee.name, typeRequest, dateRequest, dateIni, dateEnd, state)
-
-		self.store.append([self.employee.name, typeRequest, dateRequest, dateIni, dateEnd, state])  # añadimos una fila
-		requests.append(Request(self.employee, typeRequest, dateRequest, dateIni, dateEnd, state)) 
+		request = Request(self.employee, typeRequest, dateRequest, dateIni, dateEnd, state)
+		self.store.append([request._id, self.employee.name, typeRequest, dateRequest, dateIni, dateEnd, state])  # añadimos una fila
+		print request
+		requests.append(request) 
 
 	def inicializeList(self, emp):
 		for request in requests:
 			if emp.id == request._employee.id or request._employee.boss == emp.id:
-				self.store.append([request._employee.name, request._type, request._dateRequest, request._dateIni, request._dateEnd, request._state])
+				self.store.append([request._id, request._employee.name, request._type, request._dateRequest, request._dateIni, request._dateEnd, request._state])
 		
 		
 
@@ -44,13 +44,9 @@ class WindowMain:
 		selec = self.tv.get_selection()
 		t = selec.get_selected()
 		if t[1] != None:
-			for request in self.requests:  # buscamos la tarea en requests y la eliminamos
-				emp = t[0].get_value(t[1], 0)
-				typeReq = t[0].get_value(t[1], 1)
-				dateReq = t[0].get_value(t[1], 2)
-				dateIni = t[0].get_value(t[1], 3)
-				dateEnd = t[0].get_value(t[1], 4)
-				if (request._employee == emp) & (request._type == typeReq) & (request._dateRequest == dateReq) & (request._dateIni == dateIni) & (request._dateEnd == dateEnd):
+			for request in requests:  # buscamos la tarea en requests y la eliminamos
+				reqId = t[0].get_value(t[1], 0)
+				if (request._id == reqId):
 					requests.remove(request)
 					break
 			self.store.remove(t[1])
@@ -164,14 +160,14 @@ class WindowRequest:
 	# pulsar boton "enviar" del calendario
 	def get_fechaIni(self, calendar):
 		dateCal = calendar.get_date()
-		date = str(dateCal[2]) + "/" + str(dateCal[1]) + "/" + str(dateCal[0])	
+		date = str(dateCal[2]) + "/" + str(dateCal[1]+1) + "/" + str(dateCal[0])	
 		self.dateIniOb.set_text(date)
 		self.calendar.hide()
 
 	# pulsar boton "enviar" del calendario
 	def get_fechaEnd(self, calendar):
 		dateCal = calendar.get_date()
-		date = str(dateCal[2]) + "/" + str(dateCal[1]) + "/" + str(dateCal[0])	
+		date = str(dateCal[2]) + "/" + str(dateCal[1]+1) + "/" + str(dateCal[0])	
 		self.dateEndOb.set_text(date)
 		self.calendar.hide()
 
@@ -183,8 +179,13 @@ class WindowRequest:
 
 
 #***********************************************************************
+requestId = 0
+
 class Request(object):
 	def __init__(self, employee, t, dateRequest, dateIni, dateEnd, state):
+		global requestId
+		self._id = requestId
+		requestId = requestId + 1
 		self._employee = employee
 		self._type = t
 		self._dateRequest = dateRequest
@@ -193,7 +194,7 @@ class Request(object):
 		self._state = state
 
 	def __str__(self):
-		return self._employee.name + "|" + str(self._type) + "|" + str(self._dateRequest) + "|" + str(self._dateIni) + "|" + str(self._dateEnd) + "|" + str(self._state)
+		return str(self._id) + "|" + self._employee.name + "|" + str(self._type) + "|" + str(self._dateRequest) + "|" + str(self._dateIni) + "|" + str(self._dateEnd) + "|" + str(self._state)
 
 
 #***********************************************************************
