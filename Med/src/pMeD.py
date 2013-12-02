@@ -5,6 +5,11 @@ import sys
 import time
 
 
+requestId = 0
+requests = []
+employees = []
+
+
 
 # Ventana principal
 class WindowMain:
@@ -29,13 +34,14 @@ class WindowMain:
 	def addrequest(self, typeRequest, dateRequest, dateIni, dateEnd, state):
 		print (self.employee.name, typeRequest, dateRequest, dateIni, dateEnd, state)
 
-		self.store.append([self.employee.name, typeRequest, dateRequest, dateIni, dateEnd, state])  # añadimos una fila
-		requests.append(Request(self.employee, typeRequest, dateRequest, dateIni, dateEnd, state)) 
+		request = Request(self.employee, typeRequest, dateRequest, dateIni, dateEnd, state)
+		self.store.append([request._id, self.employee.name, typeRequest, dateRequest, dateIni, dateEnd, state])  # añadimos una fila
+		requests.append(request) 
 
 	def inicializeList(self, emp):
 		for request in requests:
 			if emp.id == request._employee.id or request._employee.boss == emp.id:
-				self.store.append([request._employee.name, request._type, request._dateRequest, request._dateIni, request._dateEnd, request._state])
+				self.store.append([request._id, request._employee.name, request._type, request._dateRequest, request._dateIni, request._dateEnd, request._state])
 		
 		
 
@@ -44,13 +50,9 @@ class WindowMain:
 		selec = self.tv.get_selection()
 		t = selec.get_selected()
 		if t[1] != None:
-			for request in self.requests:  # buscamos la tarea en requests y la eliminamos
-				emp = t[0].get_value(t[1], 0)
-				typeReq = t[0].get_value(t[1], 1)
-				dateReq = t[0].get_value(t[1], 2)
-				dateIni = t[0].get_value(t[1], 3)
-				dateEnd = t[0].get_value(t[1], 4)
-				if (request._employee == emp) & (request._type == typeReq) & (request._dateRequest == dateReq) & (request._dateIni == dateIni) & (request._dateEnd == dateEnd):
+			for request in self.requests:  # buscamos la tarea en requests y la eliminamose
+				id = t[0].get_value([1], 0)
+				if (request._id == id):
 					requests.remove(request)
 					break
 			self.store.remove(t[1])
@@ -185,6 +187,9 @@ class WindowRequest:
 #***********************************************************************
 class Request(object):
 	def __init__(self, employee, t, dateRequest, dateIni, dateEnd, state):
+		global requestId
+		requestId = requestId + 1
+		self._id = requestId
 		self._employee = employee
 		self._type = t
 		self._dateRequest = dateRequest
@@ -234,10 +239,6 @@ def getEmployee(name, passw):
 
 #***********************************************************************
 
-
-requests = []
-employees = []
-
 def main():
 
 	load_employees()
@@ -246,4 +247,5 @@ def main():
 	gtk.main()
 
 
-if  __name__ =='__main__':main()
+if  __name__ == '__main__':main()
+
