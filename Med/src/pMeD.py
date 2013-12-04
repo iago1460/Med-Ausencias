@@ -3,7 +3,7 @@
 import gtk
 import sys
 import time
-
+import datetime
 
 
 # Ventana principal
@@ -89,11 +89,8 @@ class WindowLogin:
 		passw = self.typeOb.get_text()
 		emp = getEmployee(emp, passw)
 		if emp is None:
-			md = gtk.MessageDialog(None, gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_ERROR, gtk.BUTTONS_CLOSE, "Credenciales incorrectos")
-			md.run()
-			md.destroy()
+			show_err_dialog("Credenciales incorrectos")
 		else:
-			# se crea un objeto nuevo de tipo WindowRequest
 			WindowMain(self, emp)
 			self.w.hide()
 		
@@ -110,6 +107,10 @@ class WindowLogin:
 		gtk.main_quit()
 		sys.exit()
 
+def show_err_dialog(text):
+	md = gtk.MessageDialog(None, gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_ERROR, gtk.BUTTONS_CLOSE, text)
+	md.run()
+	md.destroy()
 
 #***********************************************************************
 # Objeto: ventana utilizada para añadir tareas nuevas
@@ -137,9 +138,36 @@ class WindowRequest:
 		if tree_iter != None:
 			model = self.typeOb.get_model()
 			typeReq = model[tree_iter][1]  # obtenemos elemento 1: nombre del tipo
-
-		self.father.addrequest(typeReq, dateReq, dateIni, dateEnd, False)  # procesar datos
-		self.w.destroy()
+		
+		days = self.diference(dateIni, dateEnd)
+		days += 1	#se contabilizan ambos dias
+		success = False
+		
+		print "Dias " + str(days)
+		print "Dias vacas" + str(self.father.employee.holidayDays)
+		print "Dias pers" + str(self.father.employee.ownDays)
+		
+		
+		if (days<1):
+			show_err_dialog("Rango de fechas incorrecta")
+		else:
+			if (typeReq == "Asuntos personales"):
+				if (days>self.father.employee.ownDays):
+					show_err_dialog("Dias de asuntos personales insuficientes")
+				else:
+					self.father.employee.ownDays -= days
+					success = True
+			elif(typeReq == "Vacaciones"):
+				if (days>self.father.employee.holidayDays):
+					show_err_dialog("Dias de vacaciones insuficientes")
+				else:
+					self.father.employee.holidayDays -= days
+					success = True
+			else:
+				success = True
+		if success:
+			self.father.addrequest(typeReq, dateReq, dateIni, dateEnd, False)  # procesar datos
+			self.w.destroy()
 
 
 	# mostrar calendario
@@ -170,6 +198,15 @@ class WindowRequest:
 		date = str(dateCal[2]) + "/" + str(dateCal[1]+1) + "/" + str(dateCal[0])	
 		self.dateEndOb.set_text(date)
 		self.calendar.hide()
+		
+	def str_to_date(self, date):
+		fecha_servidor_tupla = time.strptime(date, "%d/%m/%Y")
+
+	def diference(self, date1, date2):
+		now = datetime.datetime(int(date1.split("/")[2]), int(date1.split("/")[1]), int(date1.split("/")[0]), 0, 0, 0)
+		fut = datetime.datetime(int(date2.split("/")[2]), int(date2.split("/")[1]), int(date2.split("/")[0]), 0, 0, 0)
+		diff = fut - now
+		return diff.days
 
 
 	# pulsar boton "cancelar" (ocultar la ventana)
@@ -199,16 +236,16 @@ class Request(object):
 
 #***********************************************************************
 class Employee(object):
-	def __init__(self, empId, bossId, name, passw, holidayDays, ownDay):
+	def __init__(self, empId, bossId, name, passw, holidayDays, ownDays):
 		self.name = name
 		self.id = empId
 		self.passw = passw
 		self.boss = bossId
 		self.holidayDays = holidayDays
-		self.ownDay = ownDay
+		self.ownDays = ownDays
 		
 	def __str__(self):
-		return str(self.id) + "|" + str(self.boss) + "|" + self.name + "|" + self.passw + "|" + str(self.holidayDays) + "|" + str(self.ownDay)
+		return str(self.id) + "|" + str(self.boss) + "|" + self.name + "|" + self.passw + "|" + str(self.holidayDays) + "|" + str(self.ownDays)
 
 
 #***********************************************************************
@@ -240,6 +277,14 @@ requests = []
 employees = []
 
 def main():
+	str = "23/2/2012"
+	now = datetime.datetime(int(str.split("/")[2]), int(str.split("/")[1]), int(str.split("/")[0]), 0, 0, 0)
+	fut = datetime.datetime(2012, 3, 23, 0, 0, 0)
+	diff = fut - now
+	print diff
+	print diff.days
+	print diff.seconds
+
 
 	load_employees()
 	print_list(employees)
