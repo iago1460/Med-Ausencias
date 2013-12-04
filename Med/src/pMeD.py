@@ -6,6 +6,12 @@ import time
 import datetime
 
 
+class Business_Contraint(Exception):
+	def __init__(self, value):
+		self.value = value
+	def __str__(self):
+		return repr(self.value)
+
 # Ventana principal
 class WindowMain:
 	def __init__(self, father, emp):
@@ -25,17 +31,37 @@ class WindowMain:
 		# se crea un objeto nuevo de tipo WindowRequest
 		w_request = WindowRequest(self)		
 
+	def add_request_glade(self, request):
+		self.store.append([request._id, request._employee.name, request._type, request._dateRequest, request._dateIni, request._dateEnd, request._state])
+		
 	# metodo que añade la tarea a la lista
 	def addrequest(self, typeRequest, dateRequest, dateIni, dateEnd, state):
 		request = Request(self.employee, typeRequest, dateRequest, dateIni, dateEnd, state)
-		self.store.append([request._id, self.employee.name, typeRequest, dateRequest, dateIni, dateEnd, state])  # añadimos una fila
+		days = diference(dateIni, dateEnd)
+		days += 1	#se contabilizan ambos dias
+		
+		if (days<1):
+			raise Business_Contraint("Rango de fechas incorrecta")
+		else:
+			if (typeRequest == "Asuntos personales"):
+				if (days>self.employee.ownDays):
+					raise Business_Contraint("Dias de asuntos personales insuficientes")
+				else:
+					self.employee.ownDays -= days
+					success = True
+			elif(typeRequest == "Vacaciones"):
+				if (days>self.employee.holidayDays):
+					raise Business_Contraint("Dias de vacaciones insuficientes")
+				else:
+					self.employee.holidayDays -= days
 		print request
-		requests.append(request) 
+		requests.append(request)
+		return request
 
 	def inicializeList(self, emp):
 		for request in requests:
-			if emp.id == request._employee.id or request._employee.boss == emp.id:
-				self.store.append([request._id, request._employee.name, request._type, request._dateRequest, request._dateIni, request._dateEnd, request._state])
+			if emp.id == request._employee.id or request._employee.boss == emp.id: #or es jefe de proyecto
+				add_request_glade(request)
 		
 		
 
@@ -139,36 +165,17 @@ class WindowRequest:
 			model = self.typeOb.get_model()
 			typeReq = model[tree_iter][1]  # obtenemos elemento 1: nombre del tipo
 		
-		days = self.diference(dateIni, dateEnd)
-		days += 1	#se contabilizan ambos dias
+		
 		success = False
 		
-		print "Dias " + str(days)
-		print "Dias vacas" + str(self.father.employee.holidayDays)
-		print "Dias pers" + str(self.father.employee.ownDays)
 		
 		
-		if (days<1):
-			show_err_dialog("Rango de fechas incorrecta")
-		else:
-			if (typeReq == "Asuntos personales"):
-				if (days>self.father.employee.ownDays):
-					show_err_dialog("Dias de asuntos personales insuficientes")
-				else:
-					self.father.employee.ownDays -= days
-					success = True
-			elif(typeReq == "Vacaciones"):
-				if (days>self.father.employee.holidayDays):
-					show_err_dialog("Dias de vacaciones insuficientes")
-				else:
-					self.father.employee.holidayDays -= days
-					success = True
-			else:
-				success = True
-		if success:
-			self.father.addrequest(typeReq, dateReq, dateIni, dateEnd, False)  # procesar datos
+		try:
+			request = self.father.addrequest(typeReq, dateReq, dateIni, dateEnd, False)  # procesar datos
+			self.father.add_request_glade(request)
 			self.w.destroy()
-
+		except Business_Contraint as e:
+			print show_err_dialog(e.value)
 
 	# mostrar calendario
 	def on_calendarIni(self, d):
@@ -202,17 +209,17 @@ class WindowRequest:
 	def str_to_date(self, date):
 		fecha_servidor_tupla = time.strptime(date, "%d/%m/%Y")
 
-	def diference(self, date1, date2):
-		now = datetime.datetime(int(date1.split("/")[2]), int(date1.split("/")[1]), int(date1.split("/")[0]), 0, 0, 0)
-		fut = datetime.datetime(int(date2.split("/")[2]), int(date2.split("/")[1]), int(date2.split("/")[0]), 0, 0, 0)
-		diff = fut - now
-		return diff.days
-
-
 	# pulsar boton "cancelar" (ocultar la ventana)
 	def on_cancel(self, w):
 		w.hide()
 
+
+
+def diference(date1, date2):
+	now = datetime.datetime(int(date1.split("/")[2]), int(date1.split("/")[1]), int(date1.split("/")[0]), 0, 0, 0)
+	fut = datetime.datetime(int(date2.split("/")[2]), int(date2.split("/")[1]), int(date2.split("/")[0]), 0, 0, 0)
+	diff = fut - now
+	return diff.days
 
 
 #***********************************************************************
