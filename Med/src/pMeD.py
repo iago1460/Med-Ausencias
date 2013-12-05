@@ -28,40 +28,17 @@ class WindowMain:
 
 	# ventana para anadir tareas nuevas
 	def on_addrequest(self, d):
-		# se crea un objeto nuevo de tipo WindowRequest
 		w_request = WindowRequest(self)		
 
 	def add_request_glade(self, request):
 		self.store.append([request._id, request._employee.name, request._type, request._dateRequest, request._dateIni, request._dateEnd, request._state])
 		
-	# metodo que añade la tarea a la lista
-	def addrequest(self, typeRequest, dateRequest, dateIni, dateEnd, state):
-		request = Request(self.employee, typeRequest, dateRequest, dateIni, dateEnd, state)
-		days = diference(dateIni, dateEnd)
-		days += 1	#se contabilizan ambos dias
-		
-		if (days<1):
-			raise Business_Contraint("Rango de fechas incorrecta")
-		else:
-			if (typeRequest == "Asuntos personales"):
-				if (days>self.employee.ownDays):
-					raise Business_Contraint("Dias de asuntos personales insuficientes")
-				else:
-					self.employee.ownDays -= days
-					success = True
-			elif(typeRequest == "Vacaciones"):
-				if (days>self.employee.holidayDays):
-					raise Business_Contraint("Dias de vacaciones insuficientes")
-				else:
-					self.employee.holidayDays -= days
-		print request
-		requests.append(request)
-		return request
+
 
 	def inicializeList(self, emp):
-		for request in requests:
-			if emp.id == request._employee.id or request._employee.boss == emp.id: #or es jefe de proyecto
-				add_request_glade(request)
+		for request in Request.requests:
+			if emp.id == request._employee.id or request._employee.boss == emp.id:  # or es jefe de proyecto
+				self.add_request_glade(request)
 		
 		
 
@@ -70,10 +47,10 @@ class WindowMain:
 		selec = self.tv.get_selection()
 		t = selec.get_selected()
 		if t[1] != None:
-			for request in requests:  # buscamos la tarea en requests y la eliminamos
+			for request in Request.requests:  # buscamos la tarea en requests y la eliminamos
 				reqId = t[0].get_value(t[1], 0)
 				if (request._id == reqId):
-					requests.remove(request)
+					Request.remove_Request(request)
 					break
 			self.store.remove(t[1])
 
@@ -113,7 +90,7 @@ class WindowLogin:
 	def on_sendRequest(self, dialog, *data):
 		emp = self.empOb.get_text()
 		passw = self.typeOb.get_text()
-		emp = getEmployee(emp, passw)
+		emp = Employee.getEmployee(emp, passw)
 		if emp is None:
 			show_err_dialog("Credenciales incorrectos")
 		else:
@@ -129,6 +106,7 @@ class WindowLogin:
 	def on_quit(self, w):
 		gtk.main_quit()
 		sys.exit()
+		
 	def on_exit(self, w, e):
 		gtk.main_quit()
 		sys.exit()
@@ -165,13 +143,8 @@ class WindowRequest:
 			model = self.typeOb.get_model()
 			typeReq = model[tree_iter][1]  # obtenemos elemento 1: nombre del tipo
 		
-		
-		success = False
-		
-		
-		
 		try:
-			request = self.father.addrequest(typeReq, dateReq, dateIni, dateEnd, False)  # procesar datos
+			request = Request.add_Request(self.father.employee, typeReq, dateReq, dateIni, dateEnd, False)  # procesar datos
 			self.father.add_request_glade(request)
 			self.w.destroy()
 		except Business_Contraint as e:
@@ -195,14 +168,14 @@ class WindowRequest:
 	# pulsar boton "enviar" del calendario
 	def get_fechaIni(self, calendar):
 		dateCal = calendar.get_date()
-		date = str(dateCal[2]) + "/" + str(dateCal[1]+1) + "/" + str(dateCal[0])	
+		date = str(dateCal[2]) + "/" + str(dateCal[1] + 1) + "/" + str(dateCal[0])	
 		self.dateIniOb.set_text(date)
 		self.calendar.hide()
 
 	# pulsar boton "enviar" del calendario
 	def get_fechaEnd(self, calendar):
 		dateCal = calendar.get_date()
-		date = str(dateCal[2]) + "/" + str(dateCal[1]+1) + "/" + str(dateCal[0])	
+		date = str(dateCal[2]) + "/" + str(dateCal[1] + 1) + "/" + str(dateCal[0])	
 		self.dateEndOb.set_text(date)
 		self.calendar.hide()
 		
@@ -223,13 +196,48 @@ def diference(date1, date2):
 
 
 #***********************************************************************
-requestId = 0
 
 class Request(object):
+	count = 0
+	requests = []
+	
+	@staticmethod
+	def __add_Request(request):
+		Request.requests.append(request)
+
+	@staticmethod
+	def remove_Request(request):
+		Request.requests.remove(request)
+	
+	# metodo que añade la tarea a la lista
+	@staticmethod
+	def add_Request(employee, typeRequest, dateRequest, dateIni, dateEnd, state):
+		days = diference(dateIni, dateEnd)
+		days += 1  # se contabilizan ambos dias
+		
+		if (days < 1):
+			raise Business_Contraint("Rango de fechas incorrecta")
+		else:
+			if (typeRequest == "Asuntos personales"):
+				if (days > employee.ownDays):
+					raise Business_Contraint("Dias de asuntos personales insuficientes")
+				else:
+					employee.ownDays -= days
+					success = True
+			elif(typeRequest == "Vacaciones"):
+				if (days > employee.holidayDays):
+					raise Business_Contraint("Dias de vacaciones insuficientes")
+				else:
+					employee.holidayDays -= days
+
+		request = Request(employee, typeRequest, dateRequest, dateIni, dateEnd, state)
+		print request
+		Request.__add_Request(request)
+		return request
+	
 	def __init__(self, employee, t, dateRequest, dateIni, dateEnd, state):
-		global requestId
-		self._id = requestId
-		requestId = requestId + 1
+		self.__class__.count += 1
+		self._id = Request.count
 		self._employee = employee
 		self._type = t
 		self._dateRequest = dateRequest
@@ -240,9 +248,10 @@ class Request(object):
 	def __str__(self):
 		return str(self._id) + "|" + self._employee.name + "|" + str(self._type) + "|" + str(self._dateRequest) + "|" + str(self._dateIni) + "|" + str(self._dateEnd) + "|" + str(self._state)
 
-
 #***********************************************************************
 class Employee(object):
+	employees = []
+	
 	def __init__(self, empId, bossId, name, passw, holidayDays, ownDays):
 		self.name = name
 		self.id = empId
@@ -254,49 +263,47 @@ class Employee(object):
 	def __str__(self):
 		return str(self.id) + "|" + str(self.boss) + "|" + self.name + "|" + self.passw + "|" + str(self.holidayDays) + "|" + str(self.ownDays)
 
-
-#***********************************************************************
-def print_list(requests):
-	for request in requests:
-		print str(request)
-
-def load_employees():
-	try:
-		filename = 'employees.txt'
-		f = open(filename, 'r')	
-		for line in f:
-			item = line.strip().split("|")
-			employees.append(Employee(int(item[0]), int(item[1]), item[2], item[3], int(item[4]), int(item[5])))
-		f.close()
-	except IOError:
-		print "Error de lectura: " + filename
-
-def getEmployee(name, passw):
-	for emp in employees:
-		if (emp.name == name) & (emp.passw == passw):
-			return emp
+	@staticmethod
+	def load_employees():
+		try:
+			filename = 'employees.txt'
+			f = open(filename, 'r')	
+			for line in f:
+				item = line.strip().split("|")
+				Employee.add_Employee(Employee(int(item[0]), int(item[1]), item[2], item[3], int(item[4]), int(item[5])))
+			f.close()
+		except IOError:
+			print "Error de lectura: " + filename
 	
+	@staticmethod
+	def add_Employee(employee):
+		Employee.employees.append(employee)
+
+	@staticmethod
+	def remove_Employee(employee):
+		Employee.employees.remove(employee)
+	
+	@staticmethod
+	def getEmployee(name, passw):
+		for emp in Employee.employees:
+			if (emp.name == name) & (emp.passw == passw):
+				return emp
 
 #***********************************************************************
 
 
-requests = []
-employees = []
+def print_list(list):
+	for item in list:
+		print str(item)
+
+#***********************************************************************
+
 
 def main():
-	str = "23/2/2012"
-	now = datetime.datetime(int(str.split("/")[2]), int(str.split("/")[1]), int(str.split("/")[0]), 0, 0, 0)
-	fut = datetime.datetime(2012, 3, 23, 0, 0, 0)
-	diff = fut - now
-	print diff
-	print diff.days
-	print diff.seconds
-
-
-	load_employees()
-	print_list(employees)
+	Employee.load_employees()
+	print_list(Employee.employees)
 	wmain = WindowLogin()
 	gtk.main()
 
 
-if  __name__ =='__main__':main()
+if  __name__ == '__main__':main()
