@@ -12,6 +12,13 @@ class Business_Contraint(Exception):
 	def __str__(self):
 		return repr(self.value)
 
+class Date_Violation(Exception):
+	def __init__(self, value):
+		self.value = value
+	def __str__(self):
+		return repr(self.value)
+
+
 # Ventana principal
 class WindowMain:
 	def __init__(self, father, emp):
@@ -24,7 +31,7 @@ class WindowMain:
 		self.w.show_all()
 		self.father = father  # se guarda el objeto padre
 		self.employee = emp
-		self.inicializeList(emp)
+		self.inicialize_list(emp)
 
 	# ventana para anadir tareas nuevas
 	def on_addrequest(self, d):
@@ -33,14 +40,9 @@ class WindowMain:
 	def add_request_glade(self, request):
 		self.store.append([request._id, request._employee.name, request._type, request._dateRequest, request._dateIni, request._dateEnd, request._state])
 		
-
-
-	def inicializeList(self, emp):
-		for request in Request.requests:
-			if emp.id == request._employee.id or request._employee.boss == emp.id:  # or es jefe de proyecto
-				self.add_request_glade(request)
-		
-		
+	def inicialize_list(self, emp):
+		for request in Request.get_visible_requests(emp):
+			self.add_request_glade(request)
 
 	# metodo para eliminar una tarea seleccionada
 	def on_deleterequest(self, tv):
@@ -50,7 +52,7 @@ class WindowMain:
 			for request in Request.requests:  # buscamos la tarea en requests y la eliminamos
 				reqId = t[0].get_value(t[1], 0)
 				if (request._id == reqId):
-					Request.remove_Request(request)
+					Request.remove_request(request)
 					break
 			self.store.remove(t[1])
 
@@ -59,7 +61,6 @@ class WindowMain:
 	def parse_date(self, f):		
 		d = f._deadline.strip().split("/")
 		return d
-
 
 	#*******************************************************************
 	# pulsar boton "cancelar" (ocultar la ventana)	
@@ -90,7 +91,7 @@ class WindowLogin:
 	def on_sendRequest(self, dialog, *data):
 		emp = self.empOb.get_text()
 		passw = self.typeOb.get_text()
-		emp = Employee.getEmployee(emp, passw)
+		emp = Employee.get_employee(emp, passw)
 		if emp is None:
 			show_err_dialog("Credenciales incorrectos")
 		else:
@@ -144,10 +145,11 @@ class WindowRequest:
 			typeReq = model[tree_iter][1]  # obtenemos elemento 1: nombre del tipo
 		
 		try:
-			request = Request.add_Request(self.father.employee, typeReq, dateReq, dateIni, dateEnd, False)  # procesar datos
+			request = Request(self.father.employee, typeReq, dateReq, dateIni, dateEnd, False)  # procesar datos
+			Request.add_request(request)
 			self.father.add_request_glade(request)
 			self.w.destroy()
-		except Business_Contraint as e:
+		except (Business_Contraint, Date_Violation) as e:
 			print show_err_dialog(e.value)
 
 	# mostrar calendario
@@ -187,10 +189,12 @@ class WindowRequest:
 		w.hide()
 
 
+def str_to_datetime(str_date):
+	return datetime.datetime(int(str_date.split("/")[2]), int(str_date.split("/")[1]), int(str_date.split("/")[0]), 0, 0, 0)
 
 def diference(date1, date2):
-	now = datetime.datetime(int(date1.split("/")[2]), int(date1.split("/")[1]), int(date1.split("/")[0]), 0, 0, 0)
-	fut = datetime.datetime(int(date2.split("/")[2]), int(date2.split("/")[1]), int(date2.split("/")[0]), 0, 0, 0)
+	now = str_to_datetime(date1)
+	fut = str_to_datetime(date2)
 	diff = fut - now
 	return diff.days
 
@@ -202,21 +206,27 @@ class Request(object):
 	requests = []
 	
 	@staticmethod
-	def __add_Request(request):
+	def add_request(request):
 		Request.requests.append(request)
 
 	@staticmethod
-	def remove_Request(request):
+	def remove_request(request):
 		Request.requests.remove(request)
 	
-	# metodo que añade la tarea a la lista
 	@staticmethod
-	def add_Request(employee, typeRequest, dateRequest, dateIni, dateEnd, state):
+	def get_visible_requests(emp):
+		list = []
+		for request in Request.requests:
+			if emp.id == request._employee.id or request._employee.boss == emp.id:  # or es jefe de proyecto
+				list.append(request)
+		return list
+	
+	def __init__(self, employee, typeRequest, dateRequest, dateIni, dateEnd, state):
 		days = diference(dateIni, dateEnd)
 		days += 1  # se contabilizan ambos dias
 		
 		if (days < 1):
-			raise Business_Contraint("Rango de fechas incorrecta")
+			raise Date_Violation("Rango de fechas incorrecta")
 		else:
 			if (typeRequest == "Asuntos personales"):
 				if (days > employee.ownDays):
@@ -229,17 +239,11 @@ class Request(object):
 					raise Business_Contraint("Dias de vacaciones insuficientes")
 				else:
 					employee.holidayDays -= days
-
-		request = Request(employee, typeRequest, dateRequest, dateIni, dateEnd, state)
-		print request
-		Request.__add_Request(request)
-		return request
-	
-	def __init__(self, employee, t, dateRequest, dateIni, dateEnd, state):
+		
 		self.__class__.count += 1
 		self._id = Request.count
 		self._employee = employee
-		self._type = t
+		self._type = typeRequest
 		self._dateRequest = dateRequest
 		self._dateIni = dateIni
 		self._dateEnd = dateEnd
@@ -284,11 +288,52 @@ class Employee(object):
 		Employee.employees.remove(employee)
 	
 	@staticmethod
-	def getEmployee(name, passw):
+	def get_employee(name, passw):
 		for emp in Employee.employees:
 			if (emp.name == name) & (emp.passw == passw):
 				return emp
+			
+	def get_project(self):
+		for project in Project.projects:
+			if (self in project.employees):
+				return project
 
+#***********************************************************************
+class Project(object):
+	count = 0
+	projects = []
+	
+	def __init__(self, name, dateIni, dateEnd, min, employees, boss):
+		self.__class__.count += 1
+		self._id = Project.count
+		self.name = name
+		self.dateIni = dateIni
+		self.dateEnd = dateEnd
+		self.min = min
+		self.employees = employees
+		self.boss = boss
+		
+		if (diference(dateIni, dateEnd) < 1):
+			raise Date_Violation("Fechas de proyecto incorrectas")
+
+	def add_Employee(self, employee):
+		self.employees.append(employee)
+
+	def remove_Employee(self, employee):
+		if (len(self.employees)>self.min):
+			self.employees.remove(employee)
+		else:
+			raise Business_Contraint("No es posible, numero minimo de empleados insuficiente")
+		
+	@staticmethod
+	def add_project(project):
+		Project.projects.append(project)
+
+	@staticmethod
+	def remove_project(project):
+		Project.projects.remove(project)
+		
+	
 #***********************************************************************
 
 
