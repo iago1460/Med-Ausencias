@@ -205,26 +205,9 @@ class Request(object):
 	count = 0
 	requests = []
 	
-	@staticmethod
-	def add_request(request):
-		Request.requests.append(request)
-
-	@staticmethod
-	def remove_request(request):
-		Request.requests.remove(request)
-	
-	@staticmethod
-	def get_visible_requests(emp):
-		list = []
-		for request in Request.requests:
-			if emp.id == request._employee.id or request._employee.boss == emp.id:  # or es jefe de proyecto
-				list.append(request)
-		return list
-	
 	def __init__(self, employee, typeRequest, dateRequest, dateIni, dateEnd, state):
 		days = diference(dateIni, dateEnd)
 		days += 1  # se contabilizan ambos dias
-		
 		if (days < 1):
 			raise Date_Violation("Rango de fechas incorrecta")
 		else:
@@ -249,6 +232,31 @@ class Request(object):
 		self._dateEnd = dateEnd
 		self._state = state
 
+	
+	@staticmethod
+	def add_request(request):
+		Request.requests.append(request)
+
+	@staticmethod
+	def remove_request(request):
+		Request.requests.remove(request)
+	
+	@staticmethod
+	def get_visible_requests(emp):
+		list = []
+		for request in Request.requests:
+			if emp.id == request._employee.id or request._employee.boss == emp.id:  # or es jefe de proyecto
+				list.append(request)
+		return list
+	
+	@staticmethod
+	def get_approved_requests(emp):
+		list = []
+		for request in Request.requests:
+			if request._state == True and emp.id == request._employee.id or request._employee.boss == emp.id:  # or es jefe de proyecto
+				list.append(request)
+		return list
+	
 	def __str__(self):
 		return str(self._id) + "|" + self._employee.name + "|" + str(self._type) + "|" + str(self._dateRequest) + "|" + str(self._dateIni) + "|" + str(self._dateEnd) + "|" + str(self._state)
 
@@ -304,6 +312,8 @@ class Project(object):
 	projects = []
 	
 	def __init__(self, name, dateIni, dateEnd, min, employees, boss):
+		if (diference(dateIni, dateEnd) < 1):
+			raise Date_Violation("Fechas de proyecto incorrectas")
 		self.__class__.count += 1
 		self._id = Project.count
 		self.name = name
@@ -313,17 +323,25 @@ class Project(object):
 		self.employees = employees
 		self.boss = boss
 		
-		if (diference(dateIni, dateEnd) < 1):
-			raise Date_Violation("Fechas de proyecto incorrectas")
-
 	def add_Employee(self, employee):
 		self.employees.append(employee)
 
-	def remove_Employee(self, employee):
-		if (len(self.employees)>self.min):
-			self.employees.remove(employee)
-		else:
-			raise Business_Contraint("No es posible, numero minimo de empleados insuficiente")
+	def check_employee_request(self, request):
+		employees = self.employees
+		requests = []
+		for emp in employees:
+			requests += Request.get_approved_requests(emp)
+		
+		date = str_to_datetime(request._dateIni)
+		for _ in range(diference(request._dateIni, request._dateEnd) + 1):
+			active_people = len(self.employees)
+			for req in requests:
+				if str_to_datetime(req._dateIni) <= date <= str_to_datetime(req._dateEnd):  # Si el dia esta en una solictud aceptada anteriormente
+					active_people -= 1
+			if active_people <= self.min:
+				raise Business_Contraint("No es posible, numero minimo de empleados el dia " + date.strftime("%d/%m/%Y"))
+			date += datetime.timedelta(days=1)
+		return True
 		
 	@staticmethod
 	def add_project(project):
