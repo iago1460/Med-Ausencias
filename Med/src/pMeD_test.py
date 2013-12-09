@@ -72,13 +72,14 @@ class TestLoadFileFunctions(unittest.TestCase):
         emp1 = pMeD.Employee(1, 1, "Emp 1", "1234", 0, 3)
         pMeD.Employee.add_Employee(emp1)
         emp2 = pMeD.Employee(2, 1, "Emp 2", "1234", 0, 1)
-        
         pMeD.Employee.add_Employee(emp2)
+        
         solicitud_emp1 = pMeD.Request(emp1, "Asuntos personales", "27/11/2013", "3/12/2013", "5/12/2013")
+        pMeD.Request.add_request(solicitud_emp1)
         project1 = pMeD.Project("Proyecto 1", "1/9/2013", "22/12/2013", 1, [emp1, emp2], None)
         self.assertTrue(project1.check_employee_request(solicitud_emp1))
-        solicitud_emp1._state = True
-        pMeD.Request.add_request(solicitud_emp1)
+        solicitud_emp1.accept()
+        
         
         solicitud_emp2 = pMeD.Request(emp2, "Asuntos personales", "27/11/2013", "5/12/2013", "5/12/2013")
         self.assertRaises(pMeD.Business_Contraint, project1.check_employee_request, solicitud_emp2)
@@ -139,8 +140,7 @@ class TestEmployeeObject(unittest.TestCase):
 
 
 def test_main():
-    test_support.run_unittest(TestLoadFileFunctions,
-                              """TestEmployeeObject""")
+    test_support.run_unittest(TestLoadFileFunctions)
 
 if __name__ == '__main__':
     test_main()

@@ -371,7 +371,7 @@ class Request(object):
 	def get_approved_requests(emp):
 		list = []
 		for request in Request.requests:
-			if request._state == "Aceptada" and emp.id == request._employee.id or request._employee.boss == emp.id:  # or es jefe de proyecto
+			if request._state == "Aceptada" and (emp.id == request._employee.id or request._employee.boss == emp.id):  # or es jefe de proyecto
 				list.append(request)
 		return list
 	
