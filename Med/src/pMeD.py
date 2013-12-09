@@ -28,11 +28,37 @@ class WindowMain:
 		self.w = self.builder.get_object("window_main")
 		self.tv = self.builder.get_object("treeview")
 		self.store = self.builder.get_object("liststoreTreeview")
+		
+		"""
+		liststore_request_states = gtk.ListStore(str)
+		request_states = ["En espera", "En tramitacion", "Aceptada"]
+		for item in request_states:
+			liststore_request_states.append([item])
+            
+		column_combo = gtk.TreeViewColumn("Estado de la peticion")
+		self.tv.append_column(column_combo)
+		cellrenderer_combo = gtk.CellRendererCombo()
+		cellrenderer_combo.set_property("editable", True)
+		cellrenderer_combo.set_property("model", liststore_request_states)
+		cellrenderer_combo.set_property("text-column", 0)
+		column_combo.pack_start(cellrenderer_combo, False)
+		column_combo.add_attribute(cellrenderer_combo, "text", 1)
+		cellrenderer_combo.connect("edited", self.combo_changed, self.store)
+		"""
+		
+		# self.builder.get_object("tv_state").connect("cliked", self.row_cliked)
+		
 		self.w.show_all()
 		self.father = father  # se guarda el objeto padre
 		self.employee = emp
-		self.inicialize_list(emp)
-
+		self.inicialize_list()
+		
+		
+	def row_cliked(self, _, __=None, ___=None):
+		request = self.__get_request_from_glade()
+		if request is not None:
+			w_details = WindowDetails(self, request)
+			
 	# ventana para anadir tareas nuevas
 	def on_addrequest(self, d):
 		w_request = WindowRequest(self)		
@@ -40,17 +66,27 @@ class WindowMain:
 	def add_request_glade(self, request):
 		self.store.append([request._id, request._employee.name, request._type, request._dateRequest, request._dateIni, request._dateEnd, request._state])
 		
-	def inicialize_list(self, emp):
-		for request in Request.get_visible_requests(emp):
+	def inicialize_list(self):
+		self.store.clear()
+		for request in Request.get_visible_requests(self.employee):
 			self.add_request_glade(request)
 
+	def __get_request_from_glade(self):
+		selec = self.tv.get_selection()
+		t = selec.get_selected()
+		if t[1] != None:
+			for request in Request.requests:  # buscamos la tarea en requests
+				reqId = int(t[0].get_value(t[1], 0))
+				if (request._id == reqId):
+					return request
+	
 	# metodo para eliminar una tarea seleccionada
-	def on_deleterequest(self, tv):
+	def on_deleterequest(self, tv):		
 		selec = self.tv.get_selection()
 		t = selec.get_selected()
 		if t[1] != None:
 			for request in Request.requests:  # buscamos la tarea en requests y la eliminamos
-				reqId = t[0].get_value(t[1], 0)
+				reqId = int(t[0].get_value(t[1], 0))
 				if (request._id == reqId):
 					Request.remove_request(request)
 					break
@@ -74,6 +110,80 @@ class WindowMain:
 	def on_exit(self, w, e):
 		self.w.destroy()
 		self.father.show()
+
+
+#***********************************************************************
+# Objeto: ventana utilizada para ver los detalles
+class WindowDetails:
+	def __init__(self, father, request):
+		self.father = father  # se guarda el objeto padre
+		self.request = request
+		self.builder = gtk.Builder()		
+		self.builder.add_from_file("windowdetails_gtk2.glade")	
+		self.builder.connect_signals(self)
+		self.w = self.builder.get_object("window_details")
+		self.w.show_all()
+		self.request_details = self.builder.get_object("textviewDetails")
+		self.request_details.set_text(request._reason)
+		self.request_combo = self.builder.get_object("comboboxEstado")
+		self.inicializate_combo()
+		
+		if (father.employee.is_boss()):
+			self.request_details.set_editable(True)
+			try:
+				project = request._employee.get_project()
+				if project is None:
+					show_err_dialog("Este empleado no esta en ningun proyecto")
+				else:
+					project.check_employee_request(request)
+			except (Business_Contraint) as e:
+				show_err_dialog("Si acepta la solicitud: " + e.value)
+		else:
+			self.request_details.set_editable(False)
+			#self.request_combo.set_property("can_focus", False)
+		
+	
+	def inicializate_combo(self):
+		listaelementos=gtk.ListStore(str)
+		listaelementos.append(["En espera"])
+		listaelementos.append(["En tramitacion"])
+		listaelementos.append(["Aceptada"])
+		listaelementos.append(["Rechazada"])
+		self.request_combo.set_model(listaelementos)
+		render = gtk.CellRendererText()
+		self.request_combo.pack_start(render, True)
+		self.request_combo.add_attribute(render, 'text', 0)
+		
+		if self.request._state == "En espera":
+			self.request_combo.set_active(0)
+		elif self.request._state == "En tramitacion":
+			self.request_combo.set_active(1)
+		elif self.request._state == "Aceptada":
+			self.request_combo.set_active(2)
+		elif self.request._state == "Rechazada":
+			self.request_combo.set_active(3)
+		else:
+			self.request_combo.set_active(0)
+		
+	# pulsar boton "enviar"
+	def on_apply(self, dialog, *data):
+		if (self.father.employee.is_boss()):
+			typeState = "En tramitacion"
+			tree_iter = self.request_combo.get_active_iter()
+			if tree_iter != None:
+				model = self.request_combo.get_model()
+				typeState = model[tree_iter][0]
+			
+			self.request._state = typeState
+			self.request._reason = self.request_details.get_text()
+			
+		self.on_cancel(None)
+		#print self.request_details.get_text()
+		
+	# Cerrar
+	def on_cancel(self, w):
+		self.father.inicialize_list()
+		self.w.hide()
 
 #***********************************************************************
 # Objeto: ventana utilizada para añadir tareas nuevas
@@ -111,7 +221,8 @@ class WindowLogin:
 	def on_exit(self, w, e):
 		gtk.main_quit()
 		sys.exit()
-
+		
+		
 def show_err_dialog(text):
 	md = gtk.MessageDialog(None, gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_ERROR, gtk.BUTTONS_CLOSE, text)
 	md.run()
@@ -145,12 +256,12 @@ class WindowRequest:
 			typeReq = model[tree_iter][1]  # obtenemos elemento 1: nombre del tipo
 		
 		try:
-			request = Request(self.father.employee, typeReq, dateReq, dateIni, dateEnd, False)  # procesar datos
+			request = Request(self.father.employee, typeReq, dateReq, dateIni, dateEnd)  # procesar datos
 			Request.add_request(request)
 			self.father.add_request_glade(request)
 			self.w.destroy()
 		except (Business_Contraint, Date_Violation) as e:
-			print show_err_dialog(e.value)
+			show_err_dialog(e.value)
 
 	# mostrar calendario
 	def on_calendarIni(self, d):
@@ -205,7 +316,7 @@ class Request(object):
 	count = 0
 	requests = []
 	
-	def __init__(self, employee, typeRequest, dateRequest, dateIni, dateEnd, state):
+	def __init__(self, employee, typeRequest, dateRequest, dateIni, dateEnd, state="En espera", reason=""):
 		days = diference(dateIni, dateEnd)
 		days += 1  # se contabilizan ambos dias
 		if (days < 1):
@@ -231,7 +342,14 @@ class Request(object):
 		self._dateIni = dateIni
 		self._dateEnd = dateEnd
 		self._state = state
-
+		self._reason = reason
+	
+	def accept(self):
+		self._state = "Aceptada"
+		
+	def denny(self, reason):
+		self._state = "Rechazada"
+		self._reason = reason
 	
 	@staticmethod
 	def add_request(request):
@@ -253,7 +371,7 @@ class Request(object):
 	def get_approved_requests(emp):
 		list = []
 		for request in Request.requests:
-			if request._state == True and emp.id == request._employee.id or request._employee.boss == emp.id:  # or es jefe de proyecto
+			if request._state == "Aceptada" and emp.id == request._employee.id or request._employee.boss == emp.id:  # or es jefe de proyecto
 				list.append(request)
 		return list
 	
@@ -301,10 +419,20 @@ class Employee(object):
 			if (emp.name == name) & (emp.passw == passw):
 				return emp
 			
+	def get_employees(self):
+		employees = []
+		for emp in Employee.employees:
+			if (emp.boss == self.id):
+				employees.append(emp)
+		return employees
+			
 	def get_project(self):
 		for project in Project.projects:
 			if (self in project.employees):
 				return project
+	
+	def is_boss(self):
+		return self.boss == 0
 
 #***********************************************************************
 class Project(object):
@@ -327,10 +455,13 @@ class Project(object):
 		self.employees.append(employee)
 
 	def check_employee_request(self, request):
-		employees = self.employees
 		requests = []
-		for emp in employees:
+		for emp in self.employees:
 			requests += Request.get_approved_requests(emp)
+		try:
+			requests.remove(request)	#en caso de que mires la misma solicitud
+		except ValueError:
+			pass
 		
 		date = str_to_datetime(request._dateIni)
 		for _ in range(diference(request._dateIni, request._dateEnd) + 1):
@@ -339,7 +470,7 @@ class Project(object):
 				if str_to_datetime(req._dateIni) <= date <= str_to_datetime(req._dateEnd):  # Si el dia esta en una solictud aceptada anteriormente
 					active_people -= 1
 			if active_people <= self.min:
-				raise Business_Contraint("No es posible, numero minimo de empleados el dia " + date.strftime("%d/%m/%Y"))
+				raise Business_Contraint("Número mínimo de empleados el día " + date.strftime("%d/%m/%Y"))
 			date += datetime.timedelta(days=1)
 		return True
 		
@@ -365,6 +496,13 @@ def print_list(list):
 def main():
 	Employee.load_employees()
 	print_list(Employee.employees)
+	
+	#crear proyecto
+	boss = Employee.employees[0]
+	employees = boss.get_employees()
+	project1 = Project("Proyecto 1", "1/1/2013", "1/1/2015", 3, employees, boss)
+	Project.add_project(project1)
+	
 	wmain = WindowLogin()
 	gtk.main()
 
