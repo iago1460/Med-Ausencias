@@ -214,10 +214,6 @@ class WindowLogin:
 		self.w.show()
 	
 	# Cerrar
-	def on_quit(self, w):
-		gtk.main_quit()
-		sys.exit()
-		
 	def on_exit(self, w, e):
 		gtk.main_quit()
 		sys.exit()
