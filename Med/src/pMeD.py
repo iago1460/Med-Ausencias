@@ -499,14 +499,17 @@ def save_objects(objs, filename):
 			pickle.dump(obj, output, pickle.HIGHEST_PROTOCOL)
 
 def load_objects(filename):
-	with open(filename, 'rb') as input:
-		list = []
-		try:
-			while True:
-				list.append(pickle.load(input))
-		except EOFError:
-			pass
-		return list
+	list = []
+	try:
+		with open(filename, 'rb') as input:
+			try:
+				while True:
+					list.append(pickle.load(input))
+			except EOFError:
+				pass
+	except IOError:
+		print "Not found " + filename
+	return list
 
 def save_all():
 	save_objects(Request.requests, "requests")
