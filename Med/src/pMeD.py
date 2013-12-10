@@ -4,7 +4,7 @@ import gtk
 import sys
 import time
 import datetime
-
+import pickle
 
 class Business_Contraint(Exception):
 	def __init__(self, value):
@@ -140,11 +140,11 @@ class WindowDetails:
 				show_err_dialog("Si acepta la solicitud: " + e.value)
 		else:
 			self.request_details.set_editable(False)
-			#self.request_combo.set_property("can_focus", False)
+			# self.request_combo.set_property("can_focus", False)
 		
 	
 	def inicializate_combo(self):
-		listaelementos=gtk.ListStore(str)
+		listaelementos = gtk.ListStore(str)
 		listaelementos.append(["En espera"])
 		listaelementos.append(["En tramitacion"])
 		listaelementos.append(["Aceptada"])
@@ -178,7 +178,7 @@ class WindowDetails:
 			self.request._reason = self.request_details.get_text()
 			
 		self.on_cancel(None)
-		#print self.request_details.get_text()
+		# print self.request_details.get_text()
 		
 	# Cerrar
 	def on_cancel(self, w):
@@ -215,6 +215,7 @@ class WindowLogin:
 	
 	# Cerrar
 	def on_exit(self, w, e):
+		save_all()
 		gtk.main_quit()
 		sys.exit()
 		
@@ -455,7 +456,7 @@ class Project(object):
 		for emp in self.employees:
 			requests += Request.get_approved_requests(emp)
 		try:
-			requests.remove(request)	#en caso de que mires la misma solicitud
+			requests.remove(request)  # en caso de que mires la misma solicitud
 		except ValueError:
 			pass
 		
@@ -478,7 +479,13 @@ class Project(object):
 	def remove_project(project):
 		Project.projects.remove(project)
 		
-	
+	def __str__(self):
+		string = str(self._id) + "|" + self.name + " |" + str(self.min)
+		for emp in self.employees:
+			string += " | " + str(emp)
+		string += " |" + str(self.boss)
+		return string
+
 #***********************************************************************
 
 
@@ -486,21 +493,69 @@ def print_list(list):
 	for item in list:
 		print str(item)
 
+def save_objects(objs, filename):
+	with open(filename, 'wb') as output:
+		for obj in objs:
+			pickle.dump(obj, output, pickle.HIGHEST_PROTOCOL)
+
+def load_objects(filename):
+	with open(filename, 'rb') as input:
+		list = []
+		try:
+			while True:
+				list.append(pickle.load(input))
+		except EOFError:
+			pass
+		return list
+
+def save_all():
+	save_objects(Request.requests, "requests")
+	save_objects(Employee.employees, "employees")
+	save_objects(Project.projects, "projects")
+		
+def load_all():
+	Employee.employees = load_objects("employees")
+	Request.requests = load_objects("requests")
+	Project.projects = load_objects("projects")
+	
+	length = len(Request.requests)
+	if (length > 0):
+		Request.count = Request.requests[length - 1]._id
+		
+	length = len(Project.projects)
+	if (length > 0):
+		Project.count = Project.projects[length - 1]._id
+	
+	# update references
+	for ref in Request.requests:
+		ref._employee = Employee.get_employee(ref._employee.name, ref._employee.passw)
+	for pro in Project.projects:
+		pro_employees = []
+		for emp in pro.employees:
+			pro_employees.append(Employee.get_employee(emp.name, emp.passw))
+		pro.employees = pro_employees
+		pro.boss = Employee.get_employee(pro.boss.name, pro.boss.passw)
 #***********************************************************************
 
 
 def main():
-	Employee.load_employees()
+	# load from text file
+	# Employee.load_employees()
+
+	load_all()
 	print_list(Employee.employees)
+	print_list(Request.requests)
+	print_list(Project.projects)
 	
-	#crear proyecto
+	# crear proyecto
+	"""
 	boss = Employee.employees[0]
 	employees = boss.get_employees()
 	project1 = Project("Proyecto 1", "1/1/2013", "1/1/2015", 3, employees, boss)
 	Project.add_project(project1)
+	"""
 	
 	wmain = WindowLogin()
 	gtk.main()
-
 
 if  __name__ == '__main__':main()
