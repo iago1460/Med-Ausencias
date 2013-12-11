@@ -338,7 +338,7 @@ class Request(object):
 		self._dateRequest = dateRequest
 		self._dateIni = dateIni
 		self._dateEnd = dateEnd
-		self._state = state
+		self.__state = state
 		self._reason = reason
 	
 	def accept(self):
@@ -347,6 +347,28 @@ class Request(object):
 	def denny(self, reason):
 		self._state = "Rechazada"
 		self._reason = reason
+
+	@property
+	def _state(self):
+		return self.__state
+	
+	@_state.setter
+	def _state(self, value):
+		days = diference(self._dateIni, self._dateEnd)
+		days += 1
+		if self.__state != "Rechazada":
+			if value == "Rechazada":
+				if self._type == "Asuntos personales":
+					self._employee.ownDays += days
+				elif self._type == "Vacaciones":
+					self._employee.holidayDays += days
+		elif value != "Rechazada":
+			if self._type == "Asuntos personales":
+				self._employee.ownDays -= days
+			elif self._type == "Vacaciones":
+				self._employee.holidayDays -= days
+		self.__state = value
+		print str(self._employee)
 	
 	@staticmethod
 	def add_request(request):
@@ -415,7 +437,13 @@ class Employee(object):
 		for emp in Employee.employees:
 			if (emp.name == name) & (emp.passw == passw):
 				return emp
-			
+	
+	@staticmethod
+	def get_employee_by_id(id):
+		for emp in Employee.employees:
+			if emp.id == id:
+				return emp
+	
 	def get_employees(self):
 		employees = []
 		for emp in Employee.employees:
@@ -514,16 +542,16 @@ def load_objects(filename):
 def save_all():
 	save_objects(Request.requests, "requests")
 	save_objects(Employee.employees, "employees")
-	save_objects(Project.projects, "projects")
+	# save_objects(Project.projects, "projects")
 		
 def load_all():
 	Employee.employees = load_objects("employees")
 	Request.requests = load_objects("requests")
-	Project.projects = load_objects("projects")
+	# Project.projects = load_objects("projects")
 	
 	length = len(Employee.employees)
 	if length == 0:
-		Employee.load_employees()	#first start
+		Employee.load_employees()  # first start
 	
 	length = len(Request.requests)
 	if length > 0:
@@ -536,12 +564,14 @@ def load_all():
 	# update references
 	for ref in Request.requests:
 		ref._employee = Employee.get_employee(ref._employee.name, ref._employee.passw)
+	"""	
 	for pro in Project.projects:
 		pro_employees = []
 		for emp in pro.employees:
 			pro_employees.append(Employee.get_employee(emp.name, emp.passw))
 		pro.employees = pro_employees
 		pro.boss = Employee.get_employee(pro.boss.name, pro.boss.passw)
+	"""
 #***********************************************************************
 
 
@@ -552,12 +582,10 @@ def main():
 	print_list(Project.projects)
 	
 	# crear proyecto
-	"""
 	boss = Employee.employees[0]
 	employees = boss.get_employees()
 	project1 = Project("Proyecto 1", "1/1/2013", "1/1/2015", 3, employees, boss)
 	Project.add_project(project1)
-	"""
 	
 	wmain = WindowLogin()
 	gtk.main()
