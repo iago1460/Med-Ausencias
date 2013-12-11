@@ -52,6 +52,12 @@ class WindowMain:
 		self.father = father  # se guarda el objeto padre
 		self.employee = emp
 		self.inicialize_list()
+
+		addbutton = self.builder.get_object("toolbuttonAdd")
+		removebutton = self	
+		if (self.employee.is_boss()):
+			addbutton.hide()
+			
 		
 		
 	def row_cliked(self, _, __=None, ___=None):
@@ -239,6 +245,8 @@ class WindowRequest:
 		self.typeOb = self.builder.get_object("entryType")
 		self.dateIniOb = self.builder.get_object("entryDateIni")
 		self.dateEndOb = self.builder.get_object("entryDateEnd")
+		projectDays = self.builder.get_object("projectDays")
+		projectDays.set_text(str(self.father.employee.get_project().dateIni) + " - " + str(self.father.employee.get_project().dateEnd))
 
 	# pulsar boton "enviar"
 	def on_sendRequest(self, dialog, *data):
@@ -274,6 +282,20 @@ class WindowRequest:
 		self.calendar = self.builder.get_object("messagedialogCalendar2")
 		self.calendar.show_all()
 
+	# mostrar el número de días que se pueden pedir
+	def on_changeComboBox(self, w):
+		avaliableDays = self.builder.get_object("avaliableDays")
+		tree_iter = self.typeOb.get_active_iter()
+		if tree_iter != None:
+			model = self.typeOb.get_model()
+			typeReq = model[tree_iter][1]
+
+		if (typeReq == "Vacaciones"):
+			avaliableDays.set_text(str(self.father.employee.holidayDays))
+		elif typeReq == "Baja":
+			avaliableDays.set_text("-")
+		elif typeReq == "Asuntos personales":
+			avaliableDays.set_text(str(self.father.employee.ownDays))	
 
 	# pulsar boton "enviar" del calendario
 	def get_fechaIni(self, calendar):
@@ -552,12 +574,10 @@ def main():
 	print_list(Project.projects)
 	
 	# crear proyecto
-	"""
 	boss = Employee.employees[0]
 	employees = boss.get_employees()
 	project1 = Project("Proyecto 1", "1/1/2013", "1/1/2015", 3, employees, boss)
 	Project.add_project(project1)
-	"""
 	
 	wmain = WindowLogin()
 	gtk.main()
