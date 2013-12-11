@@ -521,12 +521,16 @@ def load_all():
 	Request.requests = load_objects("requests")
 	Project.projects = load_objects("projects")
 	
+	length = len(Employee.employees)
+	if length == 0:
+		Employee.load_employees()	#first start
+	
 	length = len(Request.requests)
-	if (length > 0):
+	if length > 0:
 		Request.count = Request.requests[length - 1]._id
 		
 	length = len(Project.projects)
-	if (length > 0):
+	if length > 0:
 		Project.count = Project.projects[length - 1]._id
 	
 	# update references
@@ -542,9 +546,6 @@ def load_all():
 
 
 def main():
-	# load from text file
-	# Employee.load_employees()
-
 	load_all()
 	print_list(Employee.employees)
 	print_list(Request.requests)
