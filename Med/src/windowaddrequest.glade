@@ -263,6 +263,7 @@
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="model">liststore1</property>
+                <signal name="changed" handler="on_changeComboBox" swapped="no"/>
                 <child>
                   <object class="GtkCellRendererText" id="cellrenderertext2"/>
                   <attributes>
@@ -282,7 +283,99 @@
             <property name="expand">False</property>
             <property name="fill">False</property>
             <property name="padding">5</property>
+            <property name="position">1</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkHBox" id="hboxButton1">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="homogeneous">True</property>
+            <child>
+              <object class="GtkLabel" id="addPriority1">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="yalign">0.47999998927116394</property>
+                <property name="label" translatable="yes">Días disponibles:</property>
+                <property name="width_chars">15</property>
+                <attributes>
+                  <attribute name="weight" value="semibold"/>
+                </attributes>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">False</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkLabel" id="avaliableDays">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="yalign">0.47999998927116394</property>
+                <property name="width_chars">15</property>
+                <attributes>
+                  <attribute name="weight" value="semibold"/>
+                </attributes>
+              </object>
+              <packing>
+                <property name="expand">True</property>
+                <property name="fill">False</property>
+                <property name="position">1</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">False</property>
+            <property name="padding">5</property>
             <property name="position">2</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkHBox" id="hboxButton2">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="homogeneous">True</property>
+            <child>
+              <object class="GtkLabel" id="addPriority2">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="yalign">0.47999998927116394</property>
+                <property name="label" translatable="yes">Fecha del proyecto:</property>
+                <property name="width_chars">15</property>
+                <attributes>
+                  <attribute name="weight" value="semibold"/>
+                </attributes>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkLabel" id="projectDays">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="yalign">0.47999998927116394</property>
+                <property name="width_chars">15</property>
+                <attributes>
+                  <attribute name="weight" value="semibold"/>
+                </attributes>
+              </object>
+              <packing>
+                <property name="expand">True</property>
+                <property name="fill">True</property>
+                <property name="position">1</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">False</property>
+            <property name="padding">5</property>
+            <property name="position">3</property>
           </packing>
         </child>
         <child>
@@ -301,8 +394,8 @@
                 </attributes>
               </object>
               <packing>
-                <property name="expand">False</property>
-                <property name="fill">False</property>
+                <property name="expand">True</property>
+                <property name="fill">True</property>
                 <property name="position">0</property>
               </packing>
             </child>
@@ -369,7 +462,7 @@
             <property name="expand">False</property>
             <property name="fill">False</property>
             <property name="padding">5</property>
-            <property name="position">3</property>
+            <property name="position">4</property>
           </packing>
         </child>
         <child>
@@ -455,7 +548,7 @@
             <property name="expand">False</property>
             <property name="fill">False</property>
             <property name="padding">5</property>
-            <property name="position">4</property>
+            <property name="position">5</property>
           </packing>
         </child>
         <child>
@@ -505,7 +598,7 @@
           <packing>
             <property name="expand">False</property>
             <property name="fill">False</property>
-            <property name="position">5</property>
+            <property name="position">6</property>
           </packing>
         </child>
       </object>
