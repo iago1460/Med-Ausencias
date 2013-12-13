@@ -245,6 +245,11 @@ class WindowRequest:
 		self.typeOb = self.builder.get_object("entryType")
 		self.dateIniOb = self.builder.get_object("entryDateIni")
 		self.dateEndOb = self.builder.get_object("entryDateEnd")
+		self.avaliableDays = self.builder.get_object("avaliableDays")
+		self.avaliableDays.set_text(str(self.father.employee.holidayDays))
+		# set Vacaciones
+		self.typeOb.set_active(0)
+		
 		projectDays = self.builder.get_object("projectDays")
 		projectDays.set_text(str(self.father.employee.get_project().dateIni) + " - " + str(self.father.employee.get_project().dateEnd))
 
@@ -284,18 +289,17 @@ class WindowRequest:
 
 	# mostrar el número de días que se pueden pedir
 	def on_changeComboBox(self, w):
-		avaliableDays = self.builder.get_object("avaliableDays")
 		tree_iter = self.typeOb.get_active_iter()
 		if tree_iter != None:
 			model = self.typeOb.get_model()
 			typeReq = model[tree_iter][1]
 
 		if (typeReq == "Vacaciones"):
-			avaliableDays.set_text(str(self.father.employee.holidayDays))
+			self.avaliableDays.set_text(str(self.father.employee.holidayDays))
 		elif typeReq == "Baja":
-			avaliableDays.set_text("-")
+			self.avaliableDays.set_text("-")
 		elif typeReq == "Asuntos personales":
-			avaliableDays.set_text(str(self.father.employee.ownDays))	
+			self.avaliableDays.set_text(str(self.father.employee.ownDays))	
 
 	# pulsar boton "enviar" del calendario
 	def get_fechaIni(self, calendar):
@@ -328,7 +332,9 @@ def diference(date1, date2):
 	diff = fut - now
 	return diff.days
 
-
+def dates_in(date1, date2, date_start, date_end):
+	return (str_to_datetime(date1) >= str_to_datetime(date_start) and str_to_datetime(date2) <= str_to_datetime(date_end))
+			
 #***********************************************************************
 
 class Request(object):
@@ -336,6 +342,10 @@ class Request(object):
 	requests = []
 	
 	def __init__(self, employee, typeRequest, dateRequest, dateIni, dateEnd, state="En espera", reason=""):
+		if employee.get_project() is not None:
+			if not dates_in(dateIni, dateEnd, employee.get_project().dateIni, employee.get_project().dateEnd):
+				raise Business_Contraint("Las fechas no estan dentro del proyecto")
+		
 		days = diference(dateIni, dateEnd)
 		days += 1  # se contabilizan ambos dias
 		if (days < 1):

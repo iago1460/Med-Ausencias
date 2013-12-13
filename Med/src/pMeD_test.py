@@ -17,7 +17,20 @@ class TestLoadFileFunctions(unittest.TestCase):
     def test_loadFile(self):
         pMeD.Employee.load_employees()
         self.assertEqual(len(pMeD.Employee.employees), 5)
-
+        
+    def test_persistence(self):
+        emps = [pMeD.Employee(1, 0, "Director", "1234", 0, 0)]
+        pMeD.save_objects(emps, "test")
+        emps_load = pMeD.load_objects("test")
+        emp1 = emps[0]
+        emp2 = emps_load[0]
+        
+        self.assertEqual(emp1.name, emp2.name)
+        self.assertEqual(emp1.id, emp2.id)
+        self.assertEqual(emp1.passw, emp2.passw)
+        self.assertEqual(emp1.boss, emp2.boss)
+        self.assertEqual(emp1.holidayDays, emp2.holidayDays)
+        self.assertEqual(emp1.ownDays, emp2.ownDays)
 
     def test_visible_request(self):
         director = pMeD.Employee(1, 0, "Director", "1234", 0, 0)
@@ -80,9 +93,23 @@ class TestLoadFileFunctions(unittest.TestCase):
         self.assertTrue(project1.check_employee_request(solicitud_emp1))
         solicitud_emp1.accept()
         
-        
         solicitud_emp2 = pMeD.Request(emp2, "Asuntos personales", "27/11/2013", "5/12/2013", "5/12/2013")
         self.assertRaises(pMeD.Business_Contraint, project1.check_employee_request, solicitud_emp2)
+        
+        
+    def test_checking_dates(self):
+         emp1 = pMeD.Employee(1, 1, "Emp", "1234", 0, 100)
+         pMeD.Employee.add_Employee(emp1)
+         project1 = pMeD.Project("Proyecto 1", "1/9/2013", "22/12/2013", 3, [emp1], None)
+         pMeD.Project.add_project(project1)
+         
+         solicitud = pMeD.Request(emp1, "Asuntos personales", "27/11/2013", "21/12/2013", "22/12/2013")
+         pMeD.Request.add_request(solicitud)
+
+         self.assertRaises(pMeD.Business_Contraint, pMeD.Request, emp1, "Asuntos personales", "26/11/2013", "22/12/2013", "25/12/2013")
+         self.assertRaises(pMeD.Business_Contraint, pMeD.Request, emp1, "Asuntos personales", "26/11/2013", "21/12/2013", "23/12/2013")
+         self.assertRaises(pMeD.Business_Contraint, pMeD.Request, emp1, "Asuntos personales", "26/11/2013", "28/8/2013", "1/9/2013")
+         self.assertRaises(pMeD.Business_Contraint, pMeD.Request, emp1, "Asuntos personales", "26/11/2013", "28/8/2013", "2/9/2013")
         
         
     def test_caso_1(self):
@@ -90,10 +117,10 @@ class TestLoadFileFunctions(unittest.TestCase):
         jose_garcia = pMeD.Employee(2, 1, "Jose Garcia", "1234", 10, 0)
         pMeD.Employee.add_Employee(jose_garcia)
         
-        self.assertTrue(jose_garcia.holidayDays, 10)
+        self.assertEqual(jose_garcia.holidayDays, 10)
         solicitud_jose_garcia = pMeD.Request(jose_garcia, "Vacaciones", "25/11/2013", "2/12/2013", "5/12/2013")
         pMeD.Request.add_request(solicitud_jose_garcia)
-        self.assertTrue(jose_garcia.holidayDays, 6)
+        self.assertEqual(jose_garcia.holidayDays, 6)
         
         # 26/11
         ana_gomez = pMeD.Employee(3, 1, "Ana Gomez", "1234", 0, 0)
@@ -121,6 +148,10 @@ class TestLoadFileFunctions(unittest.TestCase):
         # 28/11
         solicitudes_a_revisar = pMeD.Request.get_visible_requests(director)
         self.assertEqual(len(solicitudes_a_revisar), 3)
+        self.assertTrue(solicitud_jose_garcia in solicitudes_a_revisar)
+        self.assertTrue(solicitud_ana_gomez in solicitudes_a_revisar)
+        self.assertTrue(solicitud_luis_fernandez in solicitudes_a_revisar)
+        
         # Ana Gomez
         self.assertTrue(project1.check_employee_request(solicitud_ana_gomez))
         solicitud_ana_gomez.accept()
