@@ -1,0 +1,57 @@
+GUIÓN
+
+Proyecto:
+	Mínimo de empleados trabajando: 3.
+	Fechas: 1/1/2013 - 1/1/2015
+
+Entrar como:
+	Usuario: Carlos
+	Password: 1234
+
+	Añadir nueva solicitud:
+		Decir que se muestran el nº de días disponibles y el periodo del proyecto.
+		Vacaciones:
+			Excepciones:
+				Fuera de proyecto (fechas antes del 2013)
+				Pedir más de 10 días
+			Pedir 6 días de vacaciones (01/02/2014 - 06/02/2014)
+			Volver a abrir y mostrar que el número ha cambiado.
+			Excepción:
+				Pedir 6 días más (10/02/2014 - 16/02/2014)
+		Asuntos personales se gestionan igual que las vacaciones. Omitir.
+		Baja:
+			Se puede pedir todos los días que se quieran.
+			Pedir 10 días (10/02/2014 - 20/02/2014). Se marca automáticamente como Aceptada.
+
+Entrar como:
+	Usuario: Iago
+	Password: 1234
+
+	Añadir nueva solicitud:
+		Asuntos personales:
+			Pedir 2 días (04/02/2014 - 06/02/2014)
+		Baja:
+			Pedir 4 días (11/02/2014 - 15/02/2014)
+	
+Entrar como:
+	Usuario: Cabalar
+	Password: 1234
+
+	Al ser el jefe de proyecto, se muestran todas las solicitudes creadas.
+	Debe mostrar el mensaje de aviso de que hay 
+	Estado:
+		Se acepta la primera solicitud (Vacaciones)
+		Se abre la tercera solicitud:
+			Mensaje de aviso (número mínimo de empleados)
+			Se rechaza la solicitud.
+		
+
+
+
+
+
+
+
+
+
+

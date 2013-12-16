@@ -29,25 +29,6 @@ class WindowMain:
 		self.tv = self.builder.get_object("treeview")
 		self.store = self.builder.get_object("liststoreTreeview")
 		
-		"""
-		liststore_request_states = gtk.ListStore(str)
-		request_states = ["En espera", "En tramitacion", "Aceptada"]
-		for item in request_states:
-			liststore_request_states.append([item])
-            
-		column_combo = gtk.TreeViewColumn("Estado de la peticion")
-		self.tv.append_column(column_combo)
-		cellrenderer_combo = gtk.CellRendererCombo()
-		cellrenderer_combo.set_property("editable", True)
-		cellrenderer_combo.set_property("model", liststore_request_states)
-		cellrenderer_combo.set_property("text-column", 0)
-		column_combo.pack_start(cellrenderer_combo, False)
-		column_combo.add_attribute(cellrenderer_combo, "text", 1)
-		cellrenderer_combo.connect("edited", self.combo_changed, self.store)
-		"""
-		
-		# self.builder.get_object("tv_state").connect("cliked", self.row_cliked)
-		
 		self.w.show_all()
 		self.father = father  # se guarda el objeto padre
 		self.employee = emp
@@ -57,8 +38,11 @@ class WindowMain:
 		removebutton = self	
 		if (self.employee.is_boss()):
 			addbutton.hide()
-			
-		
+			try:
+				for request in Request.get_by_typeRequest("Baja"):
+					self.employee.get_project().check_employee_request(request)
+			except (Business_Contraint) as e:
+				show_err_dialog("La baja solicitada por " + request._employee.name + " incumple el número mínimo de empleados asignados a un proyecto.")
 		
 	def row_cliked(self, _, __=None, ___=None):
 		request = self.__get_request_from_glade()
@@ -362,7 +346,9 @@ class Request(object):
 					raise Business_Contraint("Dias de vacaciones insuficientes")
 				else:
 					employee.holidayDays -= days
-		
+			elif(typeRequest == "Baja"):
+				state = "Aceptada"
+
 		self.__class__.count += 1
 		self._id = Request.count
 		self._employee = employee
@@ -417,7 +403,16 @@ class Request(object):
 			if emp.id == request._employee.id or request._employee.boss == emp.id:  # or es jefe de proyecto
 				list.append(request)
 		return list
-	
+
+	@staticmethod
+	def get_by_typeRequest(typeRequest):
+		list = []
+		for request in Request.requests:
+			if request._type == typeRequest:
+				list.append(request)
+		list.reverse()
+		return list
+
 	@staticmethod
 	def get_approved_requests(emp):
 		list = []
@@ -485,7 +480,7 @@ class Employee(object):
 			
 	def get_project(self):
 		for project in Project.projects:
-			if (self in project.employees):
+			if self in project.employees or self == project.boss:
 				return project
 	
 	def is_boss(self):
@@ -609,9 +604,6 @@ def load_all():
 
 def main():
 	load_all()
-	print_list(Employee.employees)
-	print_list(Request.requests)
-	print_list(Project.projects)
 	
 	# crear proyecto
 	boss = Employee.employees[0]
@@ -619,6 +611,10 @@ def main():
 	project1 = Project("Proyecto 1", "1/1/2013", "1/1/2015", 3, employees, boss)
 	Project.add_project(project1)
 	
+	print_list(Employee.employees)
+	print_list(Request.requests)
+	print_list(Project.projects)
+
 	wmain = WindowLogin()
 	gtk.main()
 
