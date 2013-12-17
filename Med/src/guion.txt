@@ -5,7 +5,7 @@ Proyecto:
 	Fechas: 1/1/2013 - 1/1/2015
 
 Entrar como:
-	Usuario: Carlos
+	Usuario: X
 	Password: 1234
 
 	Añadir nueva solicitud:
@@ -24,7 +24,7 @@ Entrar como:
 			Pedir 10 días (10/02/2014 - 20/02/2014). Se marca automáticamente como Aceptada.
 
 Entrar como:
-	Usuario: Iago
+	Usuario: Y
 	Password: 1234
 
 	Añadir nueva solicitud:
@@ -37,16 +37,35 @@ Entrar como:
 	Usuario: Cabalar
 	Password: 1234
 
-	Al ser el jefe de proyecto, se muestran todas las solicitudes creadas.
-	Debe mostrar el mensaje de aviso de que hay 
+	Debe mostrar el mensaje de aviso de que hay.
+	Al ser el jefe de proyecto, se muestran todas las solicitudes creadas. No se pueden hacer solicitudes.
 	Estado:
 		Se acepta la primera solicitud (Vacaciones)
 		Se abre la tercera solicitud:
 			Mensaje de aviso (número mínimo de empleados)
 			Se rechaza la solicitud.
 		
+Entrar como:
+	Usuario: X
+	Password: 1234
 
+	Comprobar que la petición de vacaciones ha sido aceptada.
+	Decir que no se puede editar.
 
+Entrar como:
+	Usuario: Y
+	Password: 1234
+
+	Comprobar que la solicitud ha sido rechazada.
+
+Entrar como:
+	Usuario: Cabalar
+	Password: 1234
+
+	Una vez que ha pasado la fecha de la solicitud, o si esta está rechazada, se puede eliminar.
+	Eliminar la tarea de Y que ha sido rechazada.
+	(Nota: solo eliminaremos solicitudes que ya se han cumplido, o solicitudes rechazadas. 
+	 Si se borra una solicitud sin que esté rechaza y la persona no se ha ido todavía de vacaciones, se pierden esos días solicitados).
 
 
 
