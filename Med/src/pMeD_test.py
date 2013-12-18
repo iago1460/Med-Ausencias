@@ -100,7 +100,7 @@ class TestLoadFileFunctions(unittest.TestCase):
     def test_checking_dates(self):
          emp1 = pMeD.Employee(1, 1, "Emp", "1234", 0, 100)
          pMeD.Employee.add_Employee(emp1)
-         project1 = pMeD.Project("Proyecto 1", "1/9/2013", "22/12/2013", 3, [emp1], None)
+         project1 = pMeD.Project("Proyecto 1", "1/9/2013", "22/12/2013", 0, [emp1], None)
          pMeD.Project.add_project(project1)
          
          solicitud = pMeD.Request(emp1, "Asuntos personales", "27/11/2013", "21/12/2013", "22/12/2013")

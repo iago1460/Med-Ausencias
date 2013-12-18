@@ -74,14 +74,17 @@ class WindowMain:
 	def on_deleterequest(self, tv):		
 		selec = self.tv.get_selection()
 		t = selec.get_selected()
-		if t[1] != None:
-			for request in Request.requests:  # buscamos la tarea en requests y la eliminamos
-				reqId = int(t[0].get_value(t[1], 0))
-				if (request._id == reqId):
-					Request.remove_request(request)
-					break
-			self.store.remove(t[1])
-
+		try:
+			if t[1] != None:
+				for request in Request.requests:  # buscamos la tarea en requests y la eliminamos
+					reqId = int(t[0].get_value(t[1], 0))
+					if (request._id == reqId):
+						Request.remove_request(request, self.employee)
+						break
+				self.store.remove(t[1])
+		except (Business_Contraint) as e:
+			show_err_dialog(e.value)
+			
 	#*******************************************************************
 	# Funcion para parsear la fecha
 	def parse_date(self, f):		
@@ -393,8 +396,12 @@ class Request(object):
 		Request.requests.append(request)
 
 	@staticmethod
-	def remove_request(request):
-		Request.requests.remove(request)
+	def remove_request(request, employee):
+		if request.__state == "En espera" or employee.is_boss():
+			request._state = "Rechazada"
+			Request.requests.remove(request)
+		else:
+			raise Business_Contraint("No puede eliminar una solicitud que no este En espera")
 	
 	@staticmethod
 	def get_visible_requests(emp):
